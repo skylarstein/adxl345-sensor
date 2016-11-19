@@ -15,14 +15,15 @@ class ADXL345 {
     this.i2cBus = i2c.openSync(this.i2cBusNo);
     this.i2cAddress = (options && options.hasOwnProperty('i2cAddress')) ? options.i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED();
 
-    this.ADXL345_REG_DEVID     = 0x00;
-    this.ADXL345_REG_POWER_CTL = 0x2D;
-    this.ADXL345_REG_DATAX0    = 0x32; // read 6 bytes from ADXL345_REG_DATAX0 for all three axes
-    this.ADXL345_REG_DATAX1    = 0x33;
-    this.ADXL345_REG_DATAY0    = 0x34;
-    this.ADXL345_REG_DATAY1    = 0x35;
-    this.ADXL345_REG_DATAZ0    = 0x36;
-    this.ADXL345_REG_DATAZ1    = 0x37;
+    this.ADXL345_REG_DEVID       = 0x00;
+    this.ADXL345_REG_POWER_CTL   = 0x2D;
+    this.ADXL345_REG_DATA_FORMAT = 0x31;
+    this.ADXL345_REG_DATAX0      = 0x32; // read 6 bytes from ADXL345_REG_DATAX0 for all three axes
+    this.ADXL345_REG_DATAX1      = 0x33;
+    this.ADXL345_REG_DATAY0      = 0x34;
+    this.ADXL345_REG_DATAY1      = 0x35;
+    this.ADXL345_REG_DATAZ0      = 0x36;
+    this.ADXL345_REG_DATAZ1      = 0x37;
 
     this.ADXL345_MG2G_SCALE_FACTOR = 0.004; // 4mg per lsb 
     this.EARTH_GRAVITY_MS2 = 9.80665;
@@ -30,8 +31,7 @@ class ADXL345 {
 
   init() {
     return new Promise((resolve, reject) => {
-
-      // Request/read device ID, validate
+      // Read and validate expected device ID
       //
       this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_DEVID, 0, (err) => {
         if(err) {
@@ -92,6 +92,41 @@ class ADXL345 {
     });
   }
 
+  setMeasurementRange(range) {
+    return new Promise((resolve, reject) => {
+      if(!ADXL345.isValidRange(range)) {
+        return reject(`Invalid range (${range})`);
+      }
+
+      // Update the measurement range within the current ADXL345_REG_DATA_FORMAT value
+      //
+      this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, (err, format) => {
+        if(err) {
+          return reject(err);
+        }
+
+        format &= ~0x0F;
+        format |= range;
+        format |= 0x08; // Enable FULL-RESOLUTION mode for range scaling
+
+        this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, format, (err) => {
+          err ? reject(err) : resolve();
+        });
+      });
+    });
+  }
+
+  getMeasurementRange() {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, (err, format) => {
+        if(err) {
+          return reject(err);
+        }
+        resolve(format & 0b11);
+      });
+    });
+  }
+
   uint16(msb, lsb) {
     return msb << 8 | lsb;
   }
@@ -99,6 +134,54 @@ class ADXL345 {
   int16(msb, lsb) {
     let val = this.uint16(msb, lsb);
     return val > 32767 ? (val - 65536) : val;
+  }
+
+  static isValidRange(range) {
+    switch(range) {
+      case ADXL345.RANGE_2_G():
+      case ADXL345.RANGE_4_G():
+      case ADXL345.RANGE_8_G():
+      case ADXL345.RANGE_16_G():
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  static stringifyRange(range) {
+    switch(range) {
+      case ADXL345.RANGE_2_G():
+        return 'RANGE_2_G';
+
+      case ADXL345.RANGE_4_G():
+        return 'RANGE_4_G';
+
+      case ADXL345.RANGE_8_G():
+        return 'RANGE_8_G';
+
+      case ADXL345.RANGE_16_G():
+        return 'RANGE_16_G';
+
+      default:
+        return 'UNKNOWN';
+    }
+  }
+
+  static RANGE_16_G() {
+    return 0b11; // +/- 16g
+  }
+
+  static RANGE_8_G() {
+    return 0b10; // +/- 8g
+  }
+
+  static RANGE_4_G() {
+    return 0b01; // +/- 4g
+  }
+
+  static RANGE_2_G() {
+    return 0b00; // +/- 2g (default)
   }
 
   static I2C_ADDRESS_ALT_GROUNDED() {

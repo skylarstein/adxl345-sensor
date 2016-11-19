@@ -1,6 +1,6 @@
 {
   "name": "adxl345-sensor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Node.js I2C module for the Analog Devices ADXL345 three-axis digital accelerometer",
   "main": "ADXL345.js",
   "scripts": {
