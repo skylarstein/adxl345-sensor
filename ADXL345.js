@@ -16,7 +16,8 @@ class ADXL345 {
     this.i2cAddress = (options && options.hasOwnProperty('i2cAddress')) ? options.i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED();
 
     this.ADXL345_REG_DEVID       = 0x00;
-    this.ADXL345_REG_POWER_CTL   = 0x2D;
+    this.ADXL345_REG_BW_RATE     = 0x2C; // Data rate and power mode control
+    this.ADXL345_REG_POWER_CTL   = 0x2D; // Power-saving features control
     this.ADXL345_REG_DATA_FORMAT = 0x31;
     this.ADXL345_REG_DATAX0      = 0x32; // read 6 bytes from ADXL345_REG_DATAX0 for all three axes
     this.ADXL345_REG_DATAX1      = 0x33;
@@ -98,16 +99,16 @@ class ADXL345 {
         return reject(`Invalid range (${range})`);
       }
 
-      // Update the measurement range within the current ADXL345_REG_DATA_FORMAT value
+      // Update the measurement range within the current ADXL345_REG_DATA_FORMAT register
       //
       this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, (err, format) => {
         if(err) {
           return reject(err);
         }
 
-        format &= ~0x0F;
+        format &= ~0b1111;
         format |= range;
-        format |= 0x08; // Enable FULL-RESOLUTION mode for range scaling
+        format |= 0b1000; // Enable FULL-RESOLUTION mode for range scaling
 
         this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, format, (err) => {
           err ? reject(err) : resolve();
@@ -127,6 +128,32 @@ class ADXL345 {
     });
   }
 
+  setDataRate(dataRate) {
+    return new Promise((resolve, reject) => {
+      if(!ADXL345.isValidDataRate(dataRate)) {
+        return reject(`Invalid data rate (${dataRate})`);
+      }
+
+      // We'll always clear the LOW_POWER bit and the remaining MSBs are unused,
+      // so no need to read ADXL345_REG_BW_RATE before writing.
+      //
+      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_BW_RATE, dataRate & 0b1111, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
+  }
+
+  getDataRate() {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_BW_RATE, (err, bwRate) => {
+        if(err) {
+          return reject(err);
+        }
+        resolve(bwRate & 0b1111);
+      });
+    });
+  }
+
   uint16(msb, lsb) {
     return msb << 8 | lsb;
   }
@@ -138,6 +165,7 @@ class ADXL345 {
 
   static isValidRange(range) {
     switch(range) {
+      // Could simply check for range >= 0 && range <= 0x3 but to be padantic...
       case ADXL345.RANGE_2_G():
       case ADXL345.RANGE_4_G():
       case ADXL345.RANGE_8_G():
@@ -149,39 +177,66 @@ class ADXL345 {
     }
   }
 
+  static isValidDataRate(dataRate) {
+    switch(dataRate) {
+      // Could simply check for dataData >= 0 && dataRate <= 0xF but to be padantic...
+      case ADXL345.DATARATE_0_10_HZ():
+      case ADXL345.DATARATE_0_20_HZ():
+      case ADXL345.DATARATE_0_39_HZ():
+      case ADXL345.DATARATE_0_78_HZ():
+      case ADXL345.DATARATE_1_56_HZ():
+      case ADXL345.DATARATE_3_13_HZ():
+      case ADXL345.DATARATE_6_25HZ():
+      case ADXL345.DATARATE_12_5_HZ():
+      case ADXL345.DATARATE_25_HZ():
+      case ADXL345.DATARATE_50_HZ():
+      case ADXL345.DATARATE_100_HZ():
+      case ADXL345.DATARATE_200_HZ():
+      case ADXL345.DATARATE_400_HZ():
+      case ADXL345.DATARATE_800_HZ():
+      case ADXL345.DATARATE_1600_HZ():
+      case ADXL345.DATARATE_3200_HZ():
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
   static stringifyRange(range) {
     switch(range) {
-      case ADXL345.RANGE_2_G():
-        return 'RANGE_2_G';
-
-      case ADXL345.RANGE_4_G():
-        return 'RANGE_4_G';
-
-      case ADXL345.RANGE_8_G():
-        return 'RANGE_8_G';
-
-      case ADXL345.RANGE_16_G():
-        return 'RANGE_16_G';
+      case ADXL345.RANGE_2_G() : return 'RANGE_2_G';
+      case ADXL345.RANGE_4_G() : return 'RANGE_4_G';
+      case ADXL345.RANGE_8_G() : return 'RANGE_8_G';
+      case ADXL345.RANGE_16_G(): return 'RANGE_16_G';
 
       default:
         return 'UNKNOWN';
     }
   }
 
-  static RANGE_16_G() {
-    return 0b11; // +/- 16g
-  }
+  static stringifyDataRate(dataRate) {
+    switch(dataRate) {
+      case ADXL345.DATARATE_0_10_HZ() : return 'DATARATE_0_10_HZ';
+      case ADXL345.DATARATE_0_20_HZ() : return 'DATARATE_0_20_HZ';
+      case ADXL345.DATARATE_0_39_HZ() : return 'DATARATE_0_39_HZ';
+      case ADXL345.DATARATE_0_78_HZ() : return 'DATARATE_0_78_HZ';
+      case ADXL345.DATARATE_1_56_HZ() : return 'DATARATE_1_56_HZ';
+      case ADXL345.DATARATE_3_13_HZ() : return 'DATARATE_3_13_HZ';
+      case ADXL345.DATARATE_6_25HZ()  : return 'DATARATE_6_25HZ';
+      case ADXL345.DATARATE_12_5_HZ() : return 'DATARATE_12_5_HZ';
+      case ADXL345.DATARATE_25_HZ()   : return 'DATARATE_25_HZ';
+      case ADXL345.DATARATE_50_HZ()   : return 'DATARATE_50_HZ';
+      case ADXL345.DATARATE_100_HZ()  : return 'DATARATE_100_HZ';
+      case ADXL345.DATARATE_200_HZ()  : return 'DATARATE_200_HZ';
+      case ADXL345.DATARATE_400_HZ()  : return 'DATARATE_400_HZ';
+      case ADXL345.DATARATE_800_HZ()  : return 'DATARATE_800_HZ';
+      case ADXL345.DATARATE_1600_HZ() : return 'DATARATE_1600_HZ';
+      case ADXL345.DATARATE_3200_HZ() : return 'DATARATE_3200_HZ';
 
-  static RANGE_8_G() {
-    return 0b10; // +/- 8g
-  }
-
-  static RANGE_4_G() {
-    return 0b01; // +/- 4g
-  }
-
-  static RANGE_2_G() {
-    return 0b00; // +/- 2g (default)
+      default:
+        return 'UNKNOWN';
+    }
   }
 
   static I2C_ADDRESS_ALT_GROUNDED() {
@@ -196,6 +251,31 @@ class ADXL345 {
     return 0xE5;
   }
 
+  // Measurement ranges used with setMeasurementRange/getMeasurementRange (ADXL345_REG_DATA_FORMAT)
+  //
+  static RANGE_2_G()  { return 0b00; } // +/- 2g (default)
+  static RANGE_4_G()  { return 0b01; } // +/- 4g
+  static RANGE_8_G()  { return 0b10; } // +/- 8g
+  static RANGE_16_G() { return 0b11; } // +/- 16g
+
+  // Data rates used with setDataRate/getDataRate (ADXL345_REG_BW_RATE)
+  //
+  static DATARATE_0_10_HZ() { return 0b0000; } // 0.05Hz Bandwidth  23µA IDD
+  static DATARATE_0_20_HZ() { return 0b0001; } // 0.10Hz Bandwidth  23µA IDD
+  static DATARATE_0_39_HZ() { return 0b0010; } // 0.20Hz Bandwidth  23µA IDD
+  static DATARATE_0_78_HZ() { return 0b0011; } // 0.39Hz Bandwidth  23µA IDD
+  static DATARATE_1_56_HZ() { return 0b0100; } // 0.78Hz Bandwidth  34µA IDD
+  static DATARATE_3_13_HZ() { return 0b0101; } // 1.56Hz Bandwidth  40µA IDD
+  static DATARATE_6_25HZ()  { return 0b0110; } // 3.13Hz Bandwidth  45µA IDD
+  static DATARATE_12_5_HZ() { return 0b0111; } // 6.25Hz Bandwidth  50µA IDD
+  static DATARATE_25_HZ()   { return 0b1000; } // 12.5Hz Bandwidth  60µA IDD
+  static DATARATE_50_HZ()   { return 0b1001; } //   25Hz Bandwidth  90µA IDD
+  static DATARATE_100_HZ()  { return 0b1010; } //   50Hz Bandwidth 140µA IDD // default reset value
+  static DATARATE_200_HZ()  { return 0b1011; } //  100Hz Bandwidth 140µA IDD
+  static DATARATE_400_HZ()  { return 0b1100; } //  200Hz Bandwidth 140µA IDD
+  static DATARATE_800_HZ()  { return 0b1101; } //  400Hz Bandwidth 140µA IDD
+  static DATARATE_1600_HZ() { return 0b1110; } //  800Hz Bandwidth  90µA IDD
+  static DATARATE_3200_HZ() { return 0b1111; } // 1600Hz Bandwidth 140µA IDD
 }
 
 module.exports = ADXL345;

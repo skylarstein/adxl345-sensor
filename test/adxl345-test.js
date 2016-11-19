@@ -8,7 +8,6 @@ const expect  = chai.expect;
 
 const readAndValidateAcceleration = (gForceUnits, range, done) => {
   let adxl345 = new ADXL345();
-  expect(adxl345).to.be.an.instanceof(ADXL345);
   adxl345.init()
     .then(() => {
       adxl345.readAcceleration(gForceUnits)
@@ -32,7 +31,6 @@ const readAndValidateAcceleration = (gForceUnits, range, done) => {
 
 const setAndValidateRange = (range, done) => {
   let adxl345 = new ADXL345();
-  expect(adxl345).to.be.an.instanceof(ADXL345);
   adxl345.init()
     .then(() => {
       console.log(`Set range ${ADXL345.stringifyRange(range)}`);
@@ -57,9 +55,34 @@ const setAndValidateRange = (range, done) => {
     });
 };
 
+const setAndValidateDataRate = (dataRate, done) => {
+  let adxl345 = new ADXL345();
+  adxl345.init()
+    .then(() => {
+      console.log(`Set data rate ${ADXL345.stringifyDataRate(dataRate)}`);
+      adxl345.setDataRate(dataRate)
+        .then(() => {
+          adxl345.getDataRate()
+            .then((updatedDataRate) => {
+              console.log(`Data rate updated to ${ADXL345.stringifyDataRate(updatedDataRate)}`);
+              expect(updatedDataRate).to.be.equal(dataRate);
+              done();
+            })
+            .catch((err) => {
+              done(err);
+            });
+        })
+        .catch((err) => {
+          done(err);
+        });
+    })
+    .catch((err) => {
+      done(err);
+    });
+};
+
 const expectInvalidRangeError = (range, done) => {
   let adxl345 = new ADXL345();
-  expect(adxl345).to.be.an.instanceof(ADXL345);
   adxl345.init()
     .then(() => {
       adxl345.setMeasurementRange(range)
@@ -107,4 +130,45 @@ describe('adxl345-sensor', () => {
   it('it should fail to set invalid measurement range (0xffff)', (done) => {
     expectInvalidRangeError(0xffff, done);
   });
+
+  const dataRates = [ADXL345.DATARATE_0_10_HZ(),
+                     ADXL345.DATARATE_0_20_HZ(),
+                     ADXL345.DATARATE_0_39_HZ(),
+                     ADXL345.DATARATE_0_78_HZ(),
+                     ADXL345.DATARATE_1_56_HZ(),
+                     ADXL345.DATARATE_3_13_HZ(),
+                     ADXL345.DATARATE_6_25HZ(),
+                     ADXL345.DATARATE_12_5_HZ(),
+                     ADXL345.DATARATE_25_HZ(),
+                     ADXL345.DATARATE_50_HZ(),
+                     ADXL345.DATARATE_200_HZ(),
+                     ADXL345.DATARATE_400_HZ(),
+                     ADXL345.DATARATE_800_HZ(),
+                     ADXL345.DATARATE_1600_HZ(),
+                     ADXL345.DATARATE_3200_HZ(),
+                     ADXL345.DATARATE_100_HZ()]; // ending on 100HZ to leave the chip at the default reset value
+
+  dataRates.forEach((dataRate) => {
+    it(`it should set data rate ${ADXL345.stringifyDataRate(dataRate)}`, (done) => {
+      setAndValidateDataRate(dataRate, done);
+    });
+  });
+
+  it('it should fail to set invalid data rate (null)', (done) => {
+    let adxl345 = new ADXL345();
+    adxl345.init()
+      .then(() => {
+        adxl345.setDataRate(null)
+          .then(() => {
+            done('Expected setDataRate(null) to fail with invalid data rate');
+          })
+          .catch((err) => {
+            done();
+          });
+      })
+      .catch((err) => {
+        done(err);
+      });
+  });
+
 });
