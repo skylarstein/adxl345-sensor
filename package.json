@@ -1,0 +1,36 @@
+{
+  "name": "adxl345-sensor",
+  "version": "0.0.1",
+  "description": "A Node.js I2C module for the Analog Devices ADXL345 three-axis digital accelerometer",
+  "main": "ADXL345.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skylarstein/adxl345-sensor.git"
+  },
+  "keywords": [
+    "ADXL345",
+    "3-Axis",
+    "Accelerometer",
+    "Sensor",
+    "Adafruit",
+    "Raspberry",
+    "Pi",
+    "Beaglebone"
+  ],
+  "author": "Skylar Stein",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/skylarstein/adxl345-sensor/issues"
+  },
+  "homepage": "https://github.com/skylarstein/adxl345-sensor#readme",
+  "dependencies": {
+    "i2c-bus": "^1.1.2"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.1.2"
+  }
+}
