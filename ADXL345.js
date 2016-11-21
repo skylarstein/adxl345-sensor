@@ -15,10 +15,13 @@ class ADXL345 {
     this.i2cBus = i2c.openSync(this.i2cBusNo);
     this.i2cAddress = (options && options.hasOwnProperty('i2cAddress')) ? options.i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED();
 
-    this.ADXL345_REG_DEVID       = 0x00;
+    this.ADXL345_REG_DEVID       = 0x00; // Device ID
+    this.ADXL345_REG_OFSX        = 0x1E; // X-axis offset
+    this.ADXL345_REG_OFSY        = 0x1F; // Y-axis offset
+    this.ADXL345_REG_OFSZ        = 0x20; // Z-axis offset
     this.ADXL345_REG_BW_RATE     = 0x2C; // Data rate and power mode control
     this.ADXL345_REG_POWER_CTL   = 0x2D; // Power-saving features control
-    this.ADXL345_REG_DATA_FORMAT = 0x31;
+    this.ADXL345_REG_DATA_FORMAT = 0x31; // Data format control
     this.ADXL345_REG_DATAX0      = 0x32; // read 6 bytes from ADXL345_REG_DATAX0 for all three axes
     this.ADXL345_REG_DATAX1      = 0x33;
     this.ADXL345_REG_DATAY0      = 0x34;
@@ -64,7 +67,7 @@ class ADXL345 {
     });
   }
 
-  readAcceleration(gForce) {
+  getAcceleration(gForce) {
     return new Promise((resolve, reject) => {
 
       // Request/read all three axes at once
@@ -150,6 +153,54 @@ class ADXL345 {
           return reject(err);
         }
         resolve(bwRate & 0b1111);
+      });
+    });
+  }
+
+  /* The OFSX, OFSY, and OFSZ registers are each eight bits and offer user-set offset
+     adjustments in twos complement format with a scale factor of 15.6 mg/LSB
+     (that is, 0x01 = 0.0156 g, 0x7F = 2 g). The value stored in the offset registers
+     is automatically added to the acceleration data, and the resulting value is
+     stored in the output data registers. For additional information regarding offset
+     calibration and the use of the offset registers, refer to the Offset Calibration
+     section in the ADXL345 datasheet.
+  */
+  setOffsetX(value) {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_OFSX, value, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
+  }
+
+  setOffsetY(value) {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_OFSY, value, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
+  }
+
+  setOffsetZ(value) {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_OFSZ, value, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
+  }
+
+  getOffsets() {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.readI2cBlock(this.i2cAddress, this.ADXL345_REG_OFSX, 3, new Buffer(3), (err, bytesRead, buffer) => {
+        if(err) {
+          return reject(err);
+        }
+
+        resolve({
+          x : buffer[0],
+          y : buffer[1],
+          z : buffer[2]
+        });
       });
     });
   }

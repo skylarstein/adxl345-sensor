@@ -21,15 +21,15 @@ const adxl345 = new ADXL345(); // defaults to i2cBusNo 1, i2cAddress 0x53
 
 // Read ADXL345 three-axis acceleration, repeat
 //
-const readAcceleration = () => {
-  adxl345.readAcceleration(true) // true for g-force units, else false for m/s²
+const getAcceleration = () => {
+  adxl345.getAcceleration(true) // true for g-force units, else false for m/s²
     .then((data) => { 
       console.log(`data = ${JSON.stringify(data, null, 2)}`);
-      setTimeout(readAcceleration, 1000);
+      setTimeout(getAcceleration, 1000);
     })
     .catch((err) => {
       console.log(`ADXL345 read error: ${err}`);
-      setTimeout(readAcceleration, 2000);
+      setTimeout(getAcceleration, 2000);
     });
 };
 
@@ -38,7 +38,7 @@ const readAcceleration = () => {
 adxl345.init()
   .then(() => {
     console.log('ADXL345 initialization succeeded');
-    readAcceleration();
+    getAcceleration();
   })
   .catch((err) => console.error(`ADXL345 initialization failed: ${err} `));
 ```
@@ -76,15 +76,15 @@ const adxl345 = new ADXL345(options);
 
 // Read ADXL345 three-axis acceleration, repeat
 //
-const readAcceleration = () => {
-  adxl345.readAcceleration(true) // true for g-force units, else false for m/s²
+const getAcceleration = () => {
+  adxl345.getAcceleration(true) // true for g-force units, else false for m/s²
     .then((data) => { 
       console.log(`data = ${JSON.stringify(data, null, 2)}`);
-      setTimeout(readAcceleration, 1000);
+      setTimeout(getAcceleration, 1000);
     })
     .catch((err) => {
       console.log(`ADXL345 read error: ${err}`);
-      setTimeout(readAcceleration, 2000);
+      setTimeout(getAcceleration, 2000);
     });
 };
 
@@ -96,11 +96,22 @@ const dataRate = ADXL345.DATARATE_100_HZ();
 adxl345.init()
   .then(() => adxl345.setMeasurementRange(measurementRange))
   .then(() => adxl345.setDataRate(dataRate))
-  .then(() => {
+  .then(() => adxl345.setOffsetX(0)) // measure for your particular device
+  .then(() => adxl345.setOffsetY(0)) // measure for your particular device
+  .then(() => adxl345.setOffsetZ(0)) // measure for your particular device
+  .then(() => adxl345.getMeasurementRange())
+  .then((range) => {
+    console.log(`Measurement range: ${ADXL345.stringifyMeasurementRange(range)}`);
+    return adxl345.getDataRate();
+  })
+  .then((rate) => {
+    console.log(`Data rate: ${ADXL345.stringifyDataRate(rate)}`);
+    return adxl345.getOffsets();
+  })
+  .then((offsets) => {
+    console.log(`Offsets: ${JSON.stringify(offsets, null, 2)}`);
     console.log('ADXL345 initialization succeeded');
-    console.log(`Measurement range: ${ADXL345.stringifyMeasurementRange(measurementRange)}`);
-    console.log(`Data rate: ${ADXL345.stringifyDataRate(dataRate)}`);
-    readAcceleration();
+    getAcceleration();
   })
   .catch((err) => console.error(`ADXL345 initialization failed: ${err} `));
 ```
@@ -110,9 +121,14 @@ adxl345.init()
 ```
 > sudo node ./examples/example.js
 Found ADXL345 device id 0xe5 on bus i2c-1, address 0x53
-ADXL345 initialization succeeded
 Measurement range: RANGE_2_G
 Data rate: DATARATE_100_HZ
+Offsets: {
+  "x": 0,
+  "y": 0,
+  "z": 0
+}
+ADXL345 initialization succeeded
 data = {
   "x": 0,
   "y": 0,

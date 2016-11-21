@@ -6,10 +6,34 @@ const chai    = require('chai');
 const ADXL345 = require('../ADXL345.js');
 const expect  = chai.expect;
 
+const measurementRanges = [
+  ADXL345.RANGE_16_G(),
+  ADXL345.RANGE_8_G(),
+  ADXL345.RANGE_4_G(),
+  ADXL345.RANGE_2_G()]; // ending on 2G to leave the chip at the default value
+
+const dataRates = [
+  ADXL345.DATARATE_0_10_HZ(),
+  ADXL345.DATARATE_0_20_HZ(),
+  ADXL345.DATARATE_0_39_HZ(),
+  ADXL345.DATARATE_0_78_HZ(),
+  ADXL345.DATARATE_1_56_HZ(),
+  ADXL345.DATARATE_3_13_HZ(),
+  ADXL345.DATARATE_6_25HZ(),
+  ADXL345.DATARATE_12_5_HZ(),
+  ADXL345.DATARATE_25_HZ(),
+  ADXL345.DATARATE_50_HZ(),
+  ADXL345.DATARATE_200_HZ(),
+  ADXL345.DATARATE_400_HZ(),
+  ADXL345.DATARATE_800_HZ(),
+  ADXL345.DATARATE_1600_HZ(),
+  ADXL345.DATARATE_3200_HZ(),
+  ADXL345.DATARATE_100_HZ()]; // ending on 100HZ to leave the chip at the default value
+
 const readAndValidateAcceleration = (gForceUnits, range, done) => {
   let adxl345 = new ADXL345();
   adxl345.init()
-    .then(() => adxl345.readAcceleration(gForceUnits))
+    .then(() => adxl345.getAcceleration(gForceUnits))
     .then((data) => {
       console.log(`ADXL345 sensor data: ${JSON.stringify(data)}`);
       expect(data).to.have.all.keys('x', 'y', 'z', 'units');
@@ -60,6 +84,25 @@ const setAndValidateDataRate = (dataRate, done) => {
     });
 };
 
+const setAndValidateOffsets = (offsetX, offsetY, offsetZ, done) => {
+  let adxl345 = new ADXL345();
+  adxl345.init()
+    .then(() => adxl345.setOffsetX(offsetX))
+    .then(() => adxl345.setOffsetY(offsetY))
+    .then(() => adxl345.setOffsetZ(offsetZ))
+    .then(() => adxl345.getOffsets())
+    .then((offsets) => {
+      expect(offsets).to.have.all.keys('x', 'y', 'z');
+      expect(offsets.x).to.be.equal(offsetX);
+      expect(offsets.y).to.be.equal(offsetY);
+      expect(offsets.z).to.be.equal(offsetZ);
+      done();
+    })
+    .catch((err) => {
+      done(err);
+    });
+};
+
 const expectInvalidRangeError = (range, done) => {
   let adxl345 = new ADXL345();
   adxl345.init()
@@ -87,12 +130,6 @@ describe('adxl345-sensor', () => {
     readAndValidateAcceleration(true, 16, done);
   });
 
-  const measurementRanges = [
-    ADXL345.RANGE_16_G(),
-    ADXL345.RANGE_8_G(),
-    ADXL345.RANGE_4_G(),
-    ADXL345.RANGE_2_G()];
-
   measurementRanges.forEach((range) => {
     it(`it should set measurement range ${ADXL345.stringifyMeasurementRange(range)}`, (done) => {
       setAndValidateRange(range, done);
@@ -106,24 +143,6 @@ describe('adxl345-sensor', () => {
   it('it should fail to set invalid measurement range (0xffff)', (done) => {
     expectInvalidRangeError(0xffff, done);
   });
-
-  const dataRates = [
-    ADXL345.DATARATE_0_10_HZ(),
-    ADXL345.DATARATE_0_20_HZ(),
-    ADXL345.DATARATE_0_39_HZ(),
-    ADXL345.DATARATE_0_78_HZ(),
-    ADXL345.DATARATE_1_56_HZ(),
-    ADXL345.DATARATE_3_13_HZ(),
-    ADXL345.DATARATE_6_25HZ(),
-    ADXL345.DATARATE_12_5_HZ(),
-    ADXL345.DATARATE_25_HZ(),
-    ADXL345.DATARATE_50_HZ(),
-    ADXL345.DATARATE_200_HZ(),
-    ADXL345.DATARATE_400_HZ(),
-    ADXL345.DATARATE_800_HZ(),
-    ADXL345.DATARATE_1600_HZ(),
-    ADXL345.DATARATE_3200_HZ(),
-    ADXL345.DATARATE_100_HZ()]; // ending on 100HZ to leave the chip at the default reset value
 
   dataRates.forEach((dataRate) => {
     it(`it should set data rate ${ADXL345.stringifyDataRate(dataRate)}`, (done) => {
@@ -139,6 +158,14 @@ describe('adxl345-sensor', () => {
       .catch((err) => {
         done();
       });
+  });
+
+  it('it should set and validate offsets (non-zero)', (done) => {
+    setAndValidateOffsets(0x01, 0x02, 0x03, done);
+  });
+
+  it('it should set and validate offsets (zero)', (done) => {
+    setAndValidateOffsets(0, 0, 0, done);
   });
 
 });
