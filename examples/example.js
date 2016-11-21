@@ -16,8 +16,8 @@ const adxl345 = new ADXL345(options);
 //
 const getAcceleration = () => {
   adxl345.getAcceleration(true) // true for g-force units, else false for m/s²
-    .then((data) => { 
-      console.log(`data = ${JSON.stringify(data, null, 2)}`);
+    .then((acceleration) => {
+      console.log(`acceleration = ${JSON.stringify(acceleration, null, 2)}`);
       setTimeout(getAcceleration, 1000);
     })
     .catch((err) => {
@@ -28,12 +28,9 @@ const getAcceleration = () => {
 
 // Initialize and configure the ADXL345 accelerometer
 //
-const measurementRange = ADXL345.RANGE_2_G();
-const dataRate = ADXL345.DATARATE_100_HZ();
-
 adxl345.init()
-  .then(() => adxl345.setMeasurementRange(measurementRange))
-  .then(() => adxl345.setDataRate(dataRate))
+  .then(() => adxl345.setMeasurementRange(ADXL345.RANGE_2_G()))
+  .then(() => adxl345.setDataRate(ADXL345.DATARATE_100_HZ()))
   .then(() => adxl345.setOffsetX(0)) // measure for your particular device
   .then(() => adxl345.setOffsetY(0)) // measure for your particular device
   .then(() => adxl345.setOffsetZ(0)) // measure for your particular device

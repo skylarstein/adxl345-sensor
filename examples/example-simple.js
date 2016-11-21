@@ -5,8 +5,8 @@ const adxl345 = new ADXL345(); // defaults to i2cBusNo 1, i2cAddress 0x53
 //
 const getAcceleration = () => {
   adxl345.getAcceleration(true) // true for g-force units, else false for m/s²
-    .then((data) => { 
-      console.log(`data = ${JSON.stringify(data, null, 2)}`);
+    .then((acceleration) => {
+      console.log(`acceleration = ${JSON.stringify(acceleration, null, 2)}`);
       setTimeout(getAcceleration, 1000);
     })
     .catch((err) => {
