@@ -33,12 +33,12 @@ const setAndValidateRange = (range, done) => {
   let adxl345 = new ADXL345();
   adxl345.init()
     .then(() => {
-      console.log(`Set range ${ADXL345.stringifyRange(range)}`);
+      console.log(`Set range ${ADXL345.stringifyMeasurementRange(range)}`);
       adxl345.setMeasurementRange(range)
         .then(() => {
           adxl345.getMeasurementRange()
             .then((updatedRange) => {
-              console.log(`Range updated to ${ADXL345.stringifyRange(updatedRange)}`);
+              console.log(`Range updated to ${ADXL345.stringifyMeasurementRange(updatedRange)}`);
               expect(updatedRange).to.be.equal(range);
               done();
             })
@@ -118,7 +118,7 @@ describe('adxl345-sensor', () => {
   const measurementRanges = [ADXL345.RANGE_16_G(), ADXL345.RANGE_8_G(), ADXL345.RANGE_4_G(), ADXL345.RANGE_2_G()];
 
   measurementRanges.forEach((range) => {
-    it(`it should set measurement range ${ADXL345.stringifyRange(range)}`, (done) => {
+    it(`it should set measurement range ${ADXL345.stringifyMeasurementRange(range)}`, (done) => {
       setAndValidateRange(range, done);
     });
   });

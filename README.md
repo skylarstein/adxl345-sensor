@@ -13,60 +13,114 @@ Since adxl345-sensor needs to talk directly to the I2C bus and requires access t
 
 If pin ```SDO/ALT ADDRESS``` is HIGH the 7-bit I2C address is 0x1D. If pin ```SDO/ALT ADDRESS``` is LOW the 7-bit I2C address is 0x53. The [Adafruit ADXL345 breakout board](https://www.adafruit.com/product/1231) is configured for 0x53. This pin floats by default so if you are using another breakout board be sure to determine if you need to wire this pin yourself.
 
-## Example Code
-
-ADXL345 initialization is broken out into a seperate function for explicit error checking. ```ADXL345.init()``` and ```ADXL345.readAcceleration()``` return promises. ```ADXL345.readAcceleration()``` will return three-axis values in m/s² units by default. Use ```ADXL345.readAcceleration(true)``` for g-force units.
+## Example Code - Basic Use
 
 ```
 const ADXL345 = require('adxl345-sensor');
+const adxl345 = new ADXL345(); // defaults to i2cBusNo 1, i2cAddress 0x53
 
-// The ADXL345 constructor options are optional.
-// Defaults are i2cBusNo 1, i2cAddress 0x53.
+// Read ADXL345 three-axis acceleration, repeat
 //
-// ADXL345.I2C_ADDRESS_ALT_GROUNDED() = 0x53
-// ADXL345.I2C_ADDRESS_ALT_HIGH() = 0x1D
-//
-const options = { i2cBusNo   : 1,
-                  i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED() };
-
-const adxl345 = new ADXL345(options);
-
 const readAcceleration = () => {
-  const gForce = true; // false for the default of m/s²
-  adxl345.readAcceleration(gForce)
+  adxl345.readAcceleration(true) // true for g-force units, else false for m/s²
     .then((data) => { 
       console.log(`data = ${JSON.stringify(data, null, 2)}`);
       setTimeout(readAcceleration, 1000);
     })
     .catch((err) => {
       console.log(`ADXL345 read error: ${err}`);
-      setTimeout(readAcceleration, 1000);
+      setTimeout(readAcceleration, 2000);
     });
 };
 
 // Initialize the ADXL345 accelerometer
 //
 adxl345.init()
-  .then((deviceId) => {
+  .then(() => {
     console.log('ADXL345 initialization succeeded');
     readAcceleration();
   })
   .catch((err) => console.error(`ADXL345 initialization failed: ${err} `));
 ```
 
-##Example Output
+####Example Output
 
 ```
-> sudo node example.js          
+> sudo node ./examples/example-simple.js
 Found ADXL345 device id 0xe5 on bus i2c-1, address 0x53
 ADXL345 initialization succeeded
 data = {
-  "x": 0.008,
-  "y": 0.008,
+  "x": 0,
+  "y": -0.004,
   "z": 0.9520000000000001,
   "units": "g"
 }
 ```
+
+## Example Code - Initialize and Configure
+
+```
+const ADXL345 = require('adxl345-sensor');
+
+// The ADXL345 constructor options are optional.
+//
+// ADXL345.I2C_ADDRESS_ALT_GROUNDED() = 0x53
+// ADXL345.I2C_ADDRESS_ALT_HIGH() = 0x1D
+//
+const options = {
+  i2cBusNo   : 1, // defaults to 1
+  i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED() // defaults to 0x53
+};
+
+const adxl345 = new ADXL345(options);
+
+// Read ADXL345 three-axis acceleration, repeat
+//
+const readAcceleration = () => {
+  adxl345.readAcceleration(true) // true for g-force units, else false for m/s²
+    .then((data) => { 
+      console.log(`data = ${JSON.stringify(data, null, 2)}`);
+      setTimeout(readAcceleration, 1000);
+    })
+    .catch((err) => {
+      console.log(`ADXL345 read error: ${err}`);
+      setTimeout(readAcceleration, 2000);
+    });
+};
+
+// Initialize and configure the ADXL345 accelerometer
+//
+const measurementRange = ADXL345.RANGE_2_G();
+const dataRate = ADXL345.DATARATE_100_HZ();
+
+adxl345.init()
+  .then(() => adxl345.setMeasurementRange(measurementRange))
+  .then(() => adxl345.setDataRate(dataRate))
+  .then(() => {
+    console.log('ADXL345 initialization succeeded');
+    console.log(`Measurement range: ${ADXL345.stringifyMeasurementRange(measurementRange)}`);
+    console.log(`Data rate: ${ADXL345.stringifyDataRate(dataRate)}`);
+    readAcceleration();
+  })
+  .catch((err) => console.error(`ADXL345 initialization failed: ${err} `));
+```
+
+####Example Output
+
+```
+> sudo node ./examples/example.js
+Found ADXL345 device id 0xe5 on bus i2c-1, address 0x53
+ADXL345 initialization succeeded
+Measurement range: RANGE_2_G
+Data rate: DATARATE_100_HZ
+data = {
+  "x": 0,
+  "y": 0,
+  "z": 0.9520000000000001,
+  "units": "g"
+}
+```
+
 ##Example Wiring
 
 For I2C setup on a Raspberry Pi, take a look at my [pi-weather-station](https://github.com/skylarstein/pi-weather-station) project.

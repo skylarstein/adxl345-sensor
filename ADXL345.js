@@ -203,7 +203,7 @@ class ADXL345 {
     }
   }
 
-  static stringifyRange(range) {
+  static stringifyMeasurementRange(range) {
     switch(range) {
       case ADXL345.RANGE_2_G() : return 'RANGE_2_G';
       case ADXL345.RANGE_4_G() : return 'RANGE_4_G';
