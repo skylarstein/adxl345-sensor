@@ -33,37 +33,47 @@ class ADXL345 {
     this.EARTH_GRAVITY_MS2 = 9.80665;
   }
 
-  init() {
+  writeByte(register, value) {
     return new Promise((resolve, reject) => {
-      // Read and validate expected device ID
-      //
-      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_DEVID, 0, (err) => {
-        if(err) {
-          return reject(err);
-        }
-
-        this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_DEVID, (err, deviceId) => {
-          if(err) {
-            return reject(err);
-          }
-          else if(deviceId !== ADXL345.DEVICE_ID()) {
-            return reject(Error(`Unexpected ADXL345 device ID: 0x${deviceId.toString(16)}`));
+      this.i2cBus.writeByte(this.i2cAddress, register, value, (err) => {
+          if (err) {
+            reject(err);
           }
           else {
-            console.log(`Found ADXL345 device id 0x${deviceId.toString(16)} on bus i2c-${this.i2cBusNo}, address 0x${this.i2cAddress.toString(16)}`);
-
-            // Enable measurement, disable AUTO_SLEEP
-            //
-            this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_POWER_CTL, 0x8, (err) => {
-              if(err) {
-                return reject(err);
-              }
-
-              resolve(deviceId);
-            });
+            resolve();
           }
-        });
       });
+    });
+  }
+
+  readByte(register) {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.readByte(this.i2cAddress, register, (err, value) => {
+        if (err) {
+          reject(err);
+        }
+        else {
+          resolve(value);
+        }
+      });
+    });
+  }
+
+  getDevId() {
+    return this.readByte(this.ADXL345_REG_DEVID);
+  }
+
+  setPowerCtl(value) {
+    return this.writeByte(this.ADXL345ADXL345_REG_POWER_CTL, value);
+  }
+
+  init() {
+    return this.getDevId().then((deviceId) => {
+      if (deviceId !== ADXL345.DEVICE_ID()) {
+        return Promise.reject(Error(`Unexpected ADXL345 device ID: 0x${deviceId.toString(16)}`));
+      }
+      console.log(`Found ADXL345 device id 0x${deviceId.toString(16)} on bus i2c-${this.i2cBusNo}, address 0x${this.i2cAddress.toString(16)}`);
+      return this.setPowerCtl(this.POWER_CTL_MEASURE).then(() => deviceId);
     });
   }
 
