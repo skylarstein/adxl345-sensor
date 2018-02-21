@@ -9,11 +9,10 @@
 class ADXL345 {
 
   constructor(options) {
-    const i2c = require('i2c-bus');
-
     this.i2cBusNo = (options && options.hasOwnProperty('i2cBusNo')) ? options.i2cBusNo : 1;
-    this.i2cBus = i2c.openSync(this.i2cBusNo);
     this.i2cAddress = (options && options.hasOwnProperty('i2cAddress')) ? options.i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED();
+    const i2c = (options && options.hasOwnProperty('i2cBus')) ? options.i2cBus : require('i2c-bus');
+    this.i2cBus = i2c.openSync(this.i2cBusNo);
 
     this.ADXL345_REG_DEVID       = 0x00; // Device ID
     this.ADXL345_REG_OFSX        = 0x1E; // X-axis offset
