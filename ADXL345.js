@@ -6,13 +6,14 @@
 
 'use strict';
 
+let i2c = require('i2c-bus');
+
 class ADXL345 {
 
   constructor(options) {
     this.i2cBusNo = (options && options.hasOwnProperty('i2cBusNo')) ? options.i2cBusNo : 1;
     this.i2cAddress = (options && options.hasOwnProperty('i2cAddress')) ? options.i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED();
-    const i2c = (options && options.hasOwnProperty('i2cBus')) ? options.i2cBus : require('i2c-bus');
-    this.i2cBus = i2c.openSync(this.i2cBusNo);
+    this.i2cBus = (options && options.hasOwnProperty('i2cBus')) ? options.i2cBus : i2c.openSync(this.i2cBusNo);
 
     this.ADXL345_REG_DEVID       = 0x00; // Device ID
     this.ADXL345_REG_OFSX        = 0x1E; // X-axis offset
@@ -46,7 +47,7 @@ class ADXL345 {
             return reject(err);
           }
           else if(deviceId !== ADXL345.DEVICE_ID()) {
-            return reject(`Unexpected ADXL345 device ID: 0x${deviceId.toString(16)}`);
+            return reject(Error(`Unexpected ADXL345 device ID: 0x${deviceId.toString(16)}`));
           }
           else {
             console.log(`Found ADXL345 device id 0x${deviceId.toString(16)} on bus i2c-${this.i2cBusNo}, address 0x${this.i2cAddress.toString(16)}`);
