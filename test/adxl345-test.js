@@ -1,5 +1,6 @@
 'use strict';
 
+/* eslint-env mocha */
 process.env.NODE_ENV = 'test';
 
 const chai    = require('chai');
@@ -10,7 +11,8 @@ const measurementRanges = [
   ADXL345.RANGE_16_G(),
   ADXL345.RANGE_8_G(),
   ADXL345.RANGE_4_G(),
-  ADXL345.RANGE_2_G()]; // ending on 2G to leave the chip at the default value
+  ADXL345.RANGE_2_G()
+]; // ending on 2G to leave the chip at the default value
 
 const dataRates = [
   ADXL345.DATARATE_0_10_HZ(),
@@ -28,7 +30,8 @@ const dataRates = [
   ADXL345.DATARATE_800_HZ(),
   ADXL345.DATARATE_1600_HZ(),
   ADXL345.DATARATE_3200_HZ(),
-  ADXL345.DATARATE_100_HZ()]; // ending on 100HZ to leave the chip at the default value
+  ADXL345.DATARATE_100_HZ()
+]; // ending on 100HZ to leave the chip at the default value
 
 const readAndValidateAcceleration = (gForceUnits, range, done) => {
   let adxl345 = new ADXL345();
@@ -108,9 +111,7 @@ const expectInvalidRangeError = (range, done) => {
   adxl345.init()
     .then(() => adxl345.setMeasurementRange(range))
     .then(() => done(`Expected setMeasurementRange(${range}) to fail with invalid range`))
-    .catch((err) => {
-      done();
-    });
+    .catch(done);
 };
 
 describe('adxl345-sensor', () => {
@@ -155,9 +156,7 @@ describe('adxl345-sensor', () => {
     adxl345.init()
       .then(() => adxl345.setDataRate(null))
       .then(() => done('Expected setDataRate(null) to fail with invalid data rate'))
-      .catch((err) => {
-        done();
-      });
+      .catch(done);
   });
 
   it('it should set and validate offsets (non-zero)', (done) => {

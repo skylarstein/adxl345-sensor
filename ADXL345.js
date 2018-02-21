@@ -11,7 +11,7 @@ class ADXL345 {
   constructor(options) {
     const i2c = require('i2c-bus');
 
-    this.i2cBusNo = (options && options.hasOwnProperty('i2cBusNo')) ? options.i2cBusNo : 1;    
+    this.i2cBusNo = (options && options.hasOwnProperty('i2cBusNo')) ? options.i2cBusNo : 1;
     this.i2cBus = i2c.openSync(this.i2cBusNo);
     this.i2cAddress = (options && options.hasOwnProperty('i2cAddress')) ? options.i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED();
 
@@ -29,7 +29,7 @@ class ADXL345 {
     this.ADXL345_REG_DATAZ0      = 0x36;
     this.ADXL345_REG_DATAZ1      = 0x37;
 
-    this.ADXL345_MG2G_SCALE_FACTOR = 0.004; // 4mg per lsb 
+    this.ADXL345_MG2G_SCALE_FACTOR = 0.004; // 4mg per lsb
     this.EARTH_GRAVITY_MS2 = 9.80665;
   }
 
