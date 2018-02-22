@@ -84,7 +84,8 @@ describe('adxl345-sensor', () => {
       let adxl345 = new ADXL345();
       let stub = sinon.stub(adxl345, 'writeByte').resolves();
       return adxl345.setPowerCtl(0x08).then(() => {
-        expect(stub.calledWith(0x2D, 0x08));
+        expect(stub.calledWith(0x2D, 0x08)).to.equal(true);
+
       });
     });
   });
@@ -101,7 +102,7 @@ describe('adxl345-sensor', () => {
       let stub = sinon.stub(adxl345, 'setPowerCtl').resolves();
       return adxl345.init().then((id) => {
         expect(id).to.equal(0xE5);
-        expect(stub.calledWith(0x08));
+        expect(stub.calledWith(0x08)).to.equal(true);
       });
     });
   });
@@ -141,13 +142,13 @@ describe('adxl345-sensor', () => {
           expect(stub.calledWith(0x31, 0b00001011)).to.equal(true);
           return adxl345.setMeasurementRange(ADXL345.RANGE_8_G());
         }).then(() => {
-          expect(stub.calledWith(0x31, 0b00001010));
+          expect(stub.calledWith(0x31, 0b00001010)).to.equal(true);
           return adxl345.setMeasurementRange(ADXL345.RANGE_4_G());
         }).then(() => {
-          expect(stub.calledWith(0x31, 0b00001001));
+          expect(stub.calledWith(0x31, 0b00001001)).to.equal(true);
           return adxl345.setMeasurementRange(ADXL345.RANGE_2_G());
         }).then(() => {
-          expect(stub.calledWith(0x31, 0b00001000));
+          expect(stub.calledWith(0x31, 0b00001000)).to.equal(true);
         });
     });
     it('rejects invalid measurement range (null)', () => {
@@ -166,7 +167,7 @@ describe('adxl345-sensor', () => {
       let stub = sinon.stub(adxl345, 'readByte').resolves(0b11111100);
       return adxl345.getMeasurementRange().then((range) => {
         expect(range).to.equal(0b00);
-        expect(stub.calledWith(0x31));
+        expect(stub.calledWith(0x31)).to.equal(true);
       });
     });
   });
@@ -176,7 +177,7 @@ describe('adxl345-sensor', () => {
       let adxl345 = new ADXL345();
       let stub = sinon.stub(adxl345, 'writeByte').resolves();
       return adxl345.setDataRate(0b1111).then(() => {
-        expect(stub.calledWith(0x2C, 0b1111));
+        expect(stub.calledWith(0x2C, 0b1111)).to.equal(true);
       });
     });
     it('rejects if rate is null', () => {
@@ -191,7 +192,7 @@ describe('adxl345-sensor', () => {
       let stub = sinon.stub(adxl345, 'readByte').resolves(0b11110000);
       return adxl345.getDataRate().then((rate) => {
         expect(rate).to.equal(0b0000);
-        expect(stub.calledWith(0x2C));
+        expect(stub.calledWith(0x2C)).to.equal(true);
       });
     });
   });
@@ -205,17 +206,17 @@ describe('adxl345-sensor', () => {
     });
     it('sets X offset', () => {
       return adxl345.setOffsetX(1).then(() => {
-        expect(stub.calledWith(0x1E, 1));
+        expect(stub.calledWith(0x1E, 1)).to.equal(true);
       });
     });
     it('sets Y offset', () => {
       return adxl345.setOffsetY(2).then(() => {
-        expect(stub.calledWith(0x1F, 2));
+        expect(stub.calledWith(0x1F, 2)).to.equal(true);
       });
     });
     it('sets Z offset', () => {
-      return adxl345.setOffsetX(3).then(() => {
-        expect(stub.calledWith(0x20, 3));
+      return adxl345.setOffsetZ(3).then(() => {
+        expect(stub.calledWith(0x20, 3)).to.equal(true);
       });
     });
   });
