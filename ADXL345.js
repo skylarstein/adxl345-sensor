@@ -48,12 +48,7 @@ class ADXL345 {
   writeByte(register, value) {
     return new Promise((resolve, reject) => {
       this.i2cBus.writeByte(this.i2cAddress, register, value, (err) => {
-          if (err) {
-            reject(err);
-          }
-          else {
-            resolve();
-          }
+          return err ? reject(err) : resolve(value);
       });
     });
   }
@@ -103,7 +98,7 @@ class ADXL345 {
    * @returns {Promise} Resolves on success, rejects with Error.
    */
   setPowerCtl(value) {
-    return this.writeByte(this.ADXL345ADXL345_REG_POWER_CTL, value);
+    return this.writeByte(this.ADXL345_REG_POWER_CTL, value);
   }
 
   /**
@@ -117,7 +112,7 @@ class ADXL345 {
         return Promise.reject(Error(`Unexpected ADXL345 device ID: 0x${deviceId.toString(16)}`));
       }
       console.log(`Found ADXL345 device id 0x${deviceId.toString(16)} on bus i2c-${this.i2cBusNo}, address 0x${this.i2cAddress.toString(16)}`);
-      return this.setPowerCtl(this.POWER_CTL_MEASURE).then(() => deviceId);
+      return this.setPowerCtl((1 << 3)).then(() => deviceId);
     });
   }
 
