@@ -59,6 +59,19 @@ class ADXL345 {
     });
   }
 
+  readBlock(register, bytes) {
+    return new Promise((resolve, reject) => {
+      this.i2cBus.readI2cBlock(this.i2cAddress, register, bytes, new Buffer(bytes), (err, bytesRead, buffer) => {
+        if (err) {
+          reject(err);
+        }
+        else {
+          resolve(buffer);
+        }
+      });
+    });
+  }
+
   getDevId() {
     return this.readByte(this.ADXL345_REG_DEVID);
   }
@@ -78,93 +91,47 @@ class ADXL345 {
   }
 
   getAcceleration(gForce) {
-    return new Promise((resolve, reject) => {
-
-      // Request/read all three axes at once
-      //
-      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_DATAX0, 0, (err) => {
-        if(err) {
-          return reject(err);
-        }
-
-        this.i2cBus.readI2cBlock(this.i2cAddress, this.ADXL345_REG_DATAX0, 6, new Buffer(6), (err, bytesRead, buffer) => {
-          if(err) {
-            return reject(err);
-          }
-
-          let x = this.int16(buffer[1], buffer[0]) * this.ADXL345_MG2G_SCALE_FACTOR;
-          let y = this.int16(buffer[3], buffer[2]) * this.ADXL345_MG2G_SCALE_FACTOR;
-          let z = this.int16(buffer[5], buffer[4]) * this.ADXL345_MG2G_SCALE_FACTOR;
-
-          resolve({
+    return this.readBlock(this.ADXL345_REG_DATAX0, 6).then((buffer) => {
+      let x = this.int16(buffer[1], buffer[0]) * this.ADXL345_MG2G_SCALE_FACTOR;
+      let y = this.int16(buffer[3], buffer[2]) * this.ADXL345_MG2G_SCALE_FACTOR;
+      let z = this.int16(buffer[5], buffer[4]) * this.ADXL345_MG2G_SCALE_FACTOR;
+      return {
             x : gForce ? x : x * this.EARTH_GRAVITY_MS2,
             y : gForce ? y : y * this.EARTH_GRAVITY_MS2,
             z : gForce ? z : z * this.EARTH_GRAVITY_MS2,
-            units : gForce ? 'g' : 'm/s²'});
-        });
-      });
+            units : gForce ? 'g' : 'm/s²'
+      };
     });
   }
 
   setMeasurementRange(range) {
-    return new Promise((resolve, reject) => {
-      if(!ADXL345.isValidRange(range)) {
-        return reject(`Invalid range (${range})`);
-      }
-
-      // Update the measurement range within the current ADXL345_REG_DATA_FORMAT register
-      //
-      this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, (err, format) => {
-        if(err) {
-          return reject(err);
-        }
-
-        format &= ~0b1111;
-        format |= range;
-        format |= 0b1000; // Enable FULL-RESOLUTION mode for range scaling
-
-        this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, format, (err) => {
-          err ? reject(err) : resolve();
-        });
-      });
+    if(!ADXL345.isValidRange(range)) {
+      return Promise.reject(`Invalid range (${range})`);
+    }
+    return this.readByte(this.ADXL345_REG_DATA_FORMAT).then((format) => {
+      format &= ~0b1111;
+      format |= range;
+      format |= 0b1000; // Enable FULL-RESOLUTION mode for range scaling
+      return this.writeByte(this.ADXL345_REG_DATA_FORMAT, format);
     });
   }
 
   getMeasurementRange() {
-    return new Promise((resolve, reject) => {
-      this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_DATA_FORMAT, (err, format) => {
-        if(err) {
-          return reject(err);
-        }
-        resolve(format & 0b11);
-      });
-    });
+    return this.readByte(this.ADXL345_REG_DATA_FORMAT).then((format) => format & 0b11);
   }
 
   setDataRate(dataRate) {
-    return new Promise((resolve, reject) => {
-      if(!ADXL345.isValidDataRate(dataRate)) {
-        return reject(`Invalid data rate (${dataRate})`);
-      }
-
-      // We'll always clear the LOW_POWER bit and the remaining MSBs are unused,
-      // so no need to read ADXL345_REG_BW_RATE before writing.
-      //
-      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_BW_RATE, dataRate & 0b1111, (err) => {
-        err ? reject(err) : resolve();
-      });
-    });
+    if(!ADXL345.isValidDataRate(dataRate)) {
+      return Promise.reject(Error(`Invalid data rate (${dataRate})`));
+    }
+    // We'll always clear the LOW_POWER bit and the remaining MSBs are unused,
+    // so no need to read ADXL345_REG_BW_RATE before writing.
+    //
+    return this.writeByte(this.ADXL345_REG_BW_RATE, dataRate & 0b1111);
   }
 
   getDataRate() {
-    return new Promise((resolve, reject) => {
-      this.i2cBus.readByte(this.i2cAddress, this.ADXL345_REG_BW_RATE, (err, bwRate) => {
-        if(err) {
-          return reject(err);
-        }
-        resolve(bwRate & 0b1111);
-      });
-    });
+    return this.readByte(this.ADXL345_REG_BW_RATE).then((bwRate) => (bwRate & 0b1111));
   }
 
   /* The OFSX, OFSY, and OFSZ registers are each eight bits and offer user-set offset
@@ -176,43 +143,23 @@ class ADXL345 {
      section in the ADXL345 datasheet.
   */
   setOffsetX(value) {
-    return new Promise((resolve, reject) => {
-      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_OFSX, value, (err) => {
-        err ? reject(err) : resolve();
-      });
-    });
+    return this.writeByte(this.ADXL345_REG_OFSX, value);
   }
 
   setOffsetY(value) {
-    return new Promise((resolve, reject) => {
-      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_OFSY, value, (err) => {
-        err ? reject(err) : resolve();
-      });
-    });
+    return this.writeByte(this.ADXL345_REG_OFSY, value);
   }
 
   setOffsetZ(value) {
-    return new Promise((resolve, reject) => {
-      this.i2cBus.writeByte(this.i2cAddress, this.ADXL345_REG_OFSZ, value, (err) => {
-        err ? reject(err) : resolve();
-      });
-    });
+    return this.writeByte(this.ADXL345_REG_OFSZ, value);
   }
 
   getOffsets() {
-    return new Promise((resolve, reject) => {
-      this.i2cBus.readI2cBlock(this.i2cAddress, this.ADXL345_REG_OFSX, 3, new Buffer(3), (err, bytesRead, buffer) => {
-        if(err) {
-          return reject(err);
-        }
-
-        resolve({
-          x : buffer[0],
-          y : buffer[1],
-          z : buffer[2]
-        });
-      });
-    });
+    return this.readBlock(this.ADXL345_REG_OFSX, 3).then((buffer) => ({
+        x : buffer[0],
+        y : buffer[1],
+        z : buffer[2]
+      }));
   }
 
   uint16(msb, lsb) {

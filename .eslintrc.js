@@ -9,8 +9,8 @@ module.exports = {
         "array-bracket-newline": "error",
         "array-bracket-spacing": "error",
         "array-callback-return": "error",
-        "array-element-newline": "error",
-        "arrow-body-style": "error",
+        "array-element-newline": "off",
+        "arrow-body-style": "off",
         "arrow-parens": [
             "error",
             "always"
@@ -112,7 +112,7 @@ module.exports = {
         "new-parens": "error",
         "newline-after-var": "off",
         "newline-before-return": "off",
-        "newline-per-chained-call": "error",
+        "newline-per-chained-call": "off",
         "no-alert": "error",
         "no-array-constructor": "error",
         "no-await-in-loop": "error",
