@@ -1,12 +1,17 @@
-const ADXL345 = require('adxl345-sensor');
+'use strict';
 
+const ADXL345 = require('../ADXL345.js');
+
+// The bus number can be changed from the default (1) using an environment variable
+// eg. I2CBUSNO=2 node example-simple.js
+//
 // The ADXL345 constructor options are optional.
 //
 // ADXL345.I2C_ADDRESS_ALT_GROUNDED() = 0x53
 // ADXL345.I2C_ADDRESS_ALT_HIGH() = 0x1D
 //
 const options = {
-  i2cBusNo   : 1, // defaults to 1
+  i2cBusNo   : process.env.I2CBUSNO || 1, // defaults to 1
   i2cAddress : ADXL345.I2C_ADDRESS_ALT_GROUNDED() // defaults to 0x53
 };
 

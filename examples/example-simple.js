@@ -1,5 +1,10 @@
-const ADXL345 = require('adxl345-sensor');
-const adxl345 = new ADXL345(); // defaults to i2cBusNo 1, i2cAddress 0x53
+'use strict';
+
+// The bus number can be changed from the default (1) using an environment variable
+// eg. I2CBUSNO=2 node example-simple.js
+const i2cBusNo = process.env.I2CBUSNO || 1;
+const ADXL345 = require('../ADXL345.js');
+const adxl345 = new ADXL345({i2cBusNo}); // defaults to i2cBusNo 1, i2cAddress 0x53
 
 // Read ADXL345 three-axis acceleration, repeat
 //
